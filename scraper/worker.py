@@ -126,7 +126,7 @@ async def process_queue():
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={"width": 1280, "height": 900}, device_scale_ratio=2)
+        context = await browser.new_context(viewport={"width": 1280, "height": 900}, device_scale_factor=2)
         page = await context.new_page()
 
         for task in tasks:

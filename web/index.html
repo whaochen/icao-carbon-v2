@@ -3,19 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ICAO 航空碳排 MRV 查證與批次憑證系統 v2.0</title>
+  <title>航線碳排與ICAO截圖快取中心 | Ti · 22 鈦 — 晧脈元素庫</title>
   <link rel="stylesheet" href="./styles.css" />
   <!-- JSZip CDN：純前端無 Token 打包 R2 官方截圖與 CSV 查證報表 -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
+  <!-- 來源提示列（當網址帶有 ?from=hao-element-matrix 時自動顯示） -->
+  <div class="origin-arrival-bar" id="originArrivalBar" hidden>
+    <div class="container origin-arrival-inner">
+      <span class="arrival-text">✈️ 已自『晧脈元素庫』起飛抵達 <strong>Ti·22 航線中心</strong>（航線碳排與ICAO截圖快取中心）</span>
+      <a href="https://hao-element-matrix.pages.dev/" class="arrival-return-link">⇄ 快速返航：晧脈元素庫</a>
+    </div>
+  </div>
+
   <!-- 頂部品牌與即時資料庫狀態列 -->
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
-        <div class="brand-badge">ICAO MRV v2</div>
+        <a href="https://hao-element-matrix.pages.dev/" class="element-tile" title="晧脈元素庫 · 第 22 號元素：鈦 (Titanium)">
+          <div class="element-top">
+            <span class="element-number">22</span>
+            <span class="element-mass">47.867</span>
+          </div>
+          <div class="element-symbol">Ti</div>
+          <div class="element-name">鈦 · Titanium</div>
+        </a>
         <div>
-          <h1 class="brand-title">航空貨運與商務差旅碳排查證平台</h1>
+          <div class="brand-title-row">
+            <h1 class="brand-title">航線碳排與ICAO截圖快取中心</h1>
+            <span class="element-member-tag">Ti · 22 晧脈元素庫成員</span>
+          </div>
           <p class="brand-subtitle">ISO 14064-1 / 範疇三類別 4 &amp; 6 查證憑證庫 · 零 AI Token 純演算法引擎 · Cloudflare R2 原圖存證</p>
         </div>
       </div>
@@ -40,6 +58,9 @@
         <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
           ↻
         </button>
+        <a href="https://hao-element-matrix.pages.dev/" class="btn-return-matrix" title="返回晧脈元素庫主控台">
+          ⇄ 返航：晧脈元素庫
+        </a>
       </div>
     </div>
   </header>
@@ -440,8 +461,14 @@
   <!-- 底部版權與架構資訊 -->
   <footer class="footer">
     <div class="container footer-inner">
-      <span>ICAO Carbon Emissions MRV Platform v2.0 · Neon PostgreSQL + Cloudflare R2 + Cloudflare Pages</span>
-      <span>遵循零假預設值與零 AI Token 原則 · 所有試算與官方憑證完全可追溯</span>
+      <div class="footer-brand">
+        <strong>航線碳排與ICAO截圖快取中心</strong>
+        <span>· Ti · 22 鈦 (Titanium) · Neon PostgreSQL + Cloudflare R2 + Cloudflare Pages</span>
+      </div>
+      <div class="footer-nav">
+        <span>遵循零假預設值與零 AI Token 原則 · 所有試算與官方憑證完全可追溯</span>
+        <a href="https://hao-element-matrix.pages.dev/" class="footer-return-link">⇄ 返航：晧脈元素庫</a>
+      </div>
     </div>
   </footer>
 

@@ -33,6 +33,7 @@ const DEMO_PAX_ITEMS = [
 
 // ==================== 初始化 ====================
 document.addEventListener("DOMContentLoaded", async () => {
+  checkOriginArrivalBanner();
   bindTabEvents();
   bindSingleLookupEvents();
   bindBatchEvents();
@@ -41,6 +42,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await Promise.all([loadQueueStatus(), loadAirportsDictionary()]);
 });
+
+function checkOriginArrivalBanner() {
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = (params.get("from") || params.get("ref") || "").toLowerCase();
+  if (fromParam.includes("hao") || fromParam.includes("element") || fromParam.includes("matrix")) {
+    const bar = document.getElementById("originArrivalBar");
+    if (bar) bar.hidden = false;
+  }
+}
 
 // ==================== 頂部狀態列與機場字典 ====================
 async function loadQueueStatus() {

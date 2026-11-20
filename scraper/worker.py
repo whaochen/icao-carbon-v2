@@ -47,10 +47,10 @@ async def scrape_cargo_route(page, origin_icao: str, dest_icao: str, local_img_p
     透過 ICAO 官方計算機 (Freighter 模式) 抓取真實距離、整機油耗、每公斤碳排與完整 Flight Stage Detail 截圖
     """
     await page.goto("https://icec.icao.int/calculator", timeout=60000, wait_until="domcontentloaded")
-    await page.wait_for_selector("#freighterButton", timeout=30000)
+    await page.locator("#freighterButton").wait_for(state="visible", timeout=30000)
 
     # 1. 切換至 Freighter (CARGO) 分頁
-    await page.click("#freighterButton")
+    await page.locator("#freighterButton").click()
     await page.wait_for_timeout(500)
 
     # 2. 使用 jQuery Select2 API 直接設定起訖 ICAO 4 碼並觸發 change 事件
@@ -72,27 +72,13 @@ async def scrape_cargo_route(page, origin_icao: str, dest_icao: str, local_img_p
     if not has_airports.get("ok"):
         raise RuntimeError(f"ICAO 官網 Freighter 清單無此機場代碼: {has_airports.get('missing')}")
 
-    # 3. 點擊 Calculate 按鈕並等待結果區塊 #ResultDivFreighterMetric 渲染完成
-    await page.click("#calculateButton")
-
-    await page.wait_for_function(
-        """() => {
-            const el = document.querySelector('#ResultDivFreighterMetric');
-            return el && el.innerText && el.innerText.includes('Total Trip Distance');
-        }""",
-        timeout=30000,
-    )
-
-    # 確保切換在 Metric (KG / KM) 分頁且顯示完整區塊
-    await page.evaluate(
-        """() => {
-            $('#metricButton').trigger('click');
-            $('#ResultDivFreighterMetric').show();
-        }"""
-    )
-    await page.wait_for_timeout(800)
+    # 3. 點擊 Calculate 按鈕並等待 #ResultDivFreighterMetric 顯示文字 (不使用 wait_for_function 避免 CSP unsafe-eval)
+    await page.locator("#calculateButton").click()
 
     result_locator = page.locator("#ResultDivFreighterMetric")
+    await result_locator.wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(1200)
+
     result_text = await result_locator.inner_text()
 
     # 解析 ICAO 官網回傳數值 (支援千分位逗號與小數點)
@@ -105,7 +91,6 @@ async def scrape_cargo_route(page, origin_icao: str, dest_icao: str, local_img_p
 
     dist_km = int(float(dist_m.group(1).replace(",", "")))
     fuel_kg = int(float(fuel_m.group(1).replace(",", "")))
-    # 我們輸入 1000 KG 以獲得更高精度的官方總碳排，再除以 1000 存入每 1 KG 單位係數 (例如 5030.00 / 1000 = 5.0300)
     co2_for_1000kg = float(co2_m.group(1).replace(",", ""))
     unit_co2_per_kg = round(co2_for_1000kg / 1000.0, 4)
 
@@ -127,12 +112,11 @@ async def scrape_passenger_route(page, origin_iata: str, dest_iata: str, local_i
     透過 ICAO 官方計算機 (Passenger 模式) 抓取單程 (One Way) 客運距離、油耗、碳排與完整 Flight Stage Detail 截圖
     """
     await page.goto("https://icec.icao.int/calculator", timeout=60000, wait_until="domcontentloaded")
-    await page.wait_for_selector("#passengerButton", timeout=30000)
+    await page.locator("#passengerButton").wait_for(state="visible", timeout=30000)
 
-    await page.click("#passengerButton")
+    await page.locator("#passengerButton").click()
     await page.wait_for_timeout(500)
 
-    # 1. 設定起飛機場 (IATA 3 碼) 並呼叫官網 PassengerGetAirportsByDeparture 載入目的機場清單
     dep_ok = await page.evaluate(
         """(orig) => {
             const $dep = $('#SelectPassengerDeparture');
@@ -148,15 +132,17 @@ async def scrape_passenger_route(page, origin_iata: str, dest_iata: str, local_i
     if not dep_ok:
         raise RuntimeError(f"ICAO 官網 Passenger 起飛清單無此機場: {origin_iata}")
 
-    # 等待目的機場選單 #SelectPassengerDestination1 載入完成
-    await page.wait_for_function(
-        """(dest) => {
-            const $dst = $('#SelectPassengerDestination1');
-            return $dst.find('option').length > 1;
-        }""",
-        dest_iata,
-        timeout=20000,
-    )
+    # 等待 AJAX 載入目的機場清單 (改用輪詢 page.evaluate 避免 wait_for_function CSP 問題)
+    dest_loaded = False
+    for _ in range(25):
+        await page.wait_for_timeout(500)
+        cnt = await page.evaluate("() => $('#SelectPassengerDestination1 option').length")
+        if cnt and cnt > 1:
+            dest_loaded = True
+            break
+
+    if not dest_loaded:
+        raise RuntimeError(f"ICAO 官網 Passenger 目的機場清單載入逾時 ({origin_iata})")
 
     dest_ok = await page.evaluate(
         """(dest) => {
@@ -174,33 +160,19 @@ async def scrape_passenger_route(page, origin_iata: str, dest_iata: str, local_i
     if not dest_ok:
         raise RuntimeError(f"ICAO 官網 Passenger 航線不支援從 {origin_iata} 飛往 {dest_iata}")
 
-    await page.click("#calculateButton")
-
-    await page.wait_for_function(
-        """() => {
-            const el = document.querySelector('#ResultDivPassengerEconomyMetric');
-            return el && el.innerText && el.innerText.includes('KM');
-        }""",
-        timeout=30000,
-    )
-
-    await page.evaluate(
-        """() => {
-            $('#metricButton').trigger('click');
-            $('#resultCabinClassSelect').val('Economy').trigger('change');
-            $('#ResultDivPassengerEconomyMetric').show();
-        }"""
-    )
-    await page.wait_for_timeout(800)
+    await page.locator("#calculateButton").click()
 
     result_locator = page.locator("#ResultDivPassengerEconomyMetric")
+    await result_locator.wait_for(state="visible", timeout=30000)
+    await page.wait_for_timeout(1200)
+
     result_text = await result_locator.inner_text()
 
     dist_m = re.search(r"Total Trip Distance[\s\S]*?([\d,]+)\s*KM", result_text, re.I) or re.search(
         r"([\d,]+)\s*KM", result_text, re.I
     )
     fuel_m = re.search(r"Fuel Burn[\s\S]*?([\d,]+\.?\d*)\s*KG", result_text, re.I)
-    co2_m = re.search(r"CO2[\s\S]*?([\d,]+\.?\d*)\s*KG", result_text, re.I)
+    co2_m = re.search(r"CO[\s\S]*?([\d,]+\.?\d*)\s*KG", result_text, re.I)
 
     if not (dist_m and co2_m):
         raise RuntimeError(f"無法解析 ICAO 官網 Passenger 數值: {result_text[:300]}")
@@ -245,7 +217,11 @@ async def process_queue():
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(viewport={"width": 1360, "height": 1200}, device_scale_factor=2)
+        context = await browser.new_context(
+            viewport={"width": 1360, "height": 1200},
+            device_scale_factor=2,
+            bypass_csp=True,
+        )
         page = await context.new_page()
 
         for task in tasks:

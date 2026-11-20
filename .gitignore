@@ -1,6 +1,8 @@
 # 環境變數與金鑰
 .env
 .env.local
+.dev.vars
+web/.dev.vars
 
 # 截圖暫存區（所有正式圖檔只存 Cloudflare R2，不進 Git）
 tmp_screenshots/

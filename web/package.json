@@ -1,0 +1,17 @@
+{
+  "name": "icao-carbon-v2-web",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ICAO 航空貨運與差旅碳排 MRV 查證與批次憑證系統 (Cloudflare Pages + Pages Functions + Neon PostgreSQL + R2)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev . --port 8788",
+    "deploy": "wrangler pages deploy . --project-name icao-carbon-v2"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}

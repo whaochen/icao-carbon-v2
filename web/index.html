@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICAO 航空碳排 MRV 查證與批次憑證系統 v2.0</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <!-- JSZip CDN：純前端無 Token 打包 R2 官方截圖與 CSV 查證報表 -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+  <!-- 頂部品牌與即時資料庫狀態列 -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="brand-badge">ICAO MRV v2</div>
+        <div>
+          <h1 class="brand-title">航空貨運與商務差旅碳排查證平台</h1>
+          <p class="brand-subtitle">ISO 14064-1 / 範疇三類別 4 &amp; 6 查證憑證庫 · 零 AI Token 純演算法引擎 · Cloudflare R2 原圖存證</p>
+        </div>
+      </div>
+
+      <div class="stats-bar" id="statsBar">
+        <div class="stat-pill">
+          <span class="stat-label">全球機場字典</span>
+          <strong class="stat-value" id="statAirports">--</strong>
+        </div>
+        <div class="stat-pill stat-official">
+          <span class="stat-label">已收錄官方航線</span>
+          <strong class="stat-value" id="statCached">--</strong>
+        </div>
+        <div class="stat-pill stat-r2">
+          <span class="stat-label">R2 官方截圖憑證</span>
+          <strong class="stat-value" id="statR2Images">--</strong>
+        </div>
+        <div class="stat-pill stat-queue">
+          <span class="stat-label">佇列排隊補圖中</span>
+          <strong class="stat-value" id="statQueuePending">--</strong>
+        </div>
+        <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
+          ↻
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- 新手操作引導與一鍵示範區 -->
+    <section class="guide-banner">
+      <div class="guide-steps">
+        <div class="step-item">
+          <span class="step-num">1</span>
+          <div>
+            <strong>選擇查詢或載入範例</strong>
+            <p>支援單筆即時查詢、CSV 批次上傳，或直接點選右側示範按鈕體驗。</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">2</span>
+          <div>
+            <strong>官方快取優先 · 零假值 GCD 試算</strong>
+            <p>命中快取即附 R2 官方截圖；未命中則依真實機場經緯度算大圓距離並自動排隊補圖。</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">3</span>
+          <div>
+            <strong>一鍵打包 ZIP 查證憑證包</strong>
+            <p>自動將碳排明細 CSV、MRV 查證說明書與所有 R2 官方原圖 (.png) 打包下載。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-actions">
+        <span class="demo-label">快速體驗（免準備檔案）：</span>
+        <div class="demo-buttons">
+          <button type="button" class="btn btn-demo-cargo" id="btnDemoCargo">
+            📦 載入空運範例 (TPE → LAX / PVG / FRA)
+          </button>
+          <button type="button" class="btn btn-demo-pax" id="btnDemoPax">
+            ✈️ 載入差旅範例 (TPE → NRT / SIN / SFO)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 雙模式切換 Tabs -->
+    <div class="mode-tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-tab="single" id="tabBtnSingle">
+        🔍 單筆即時查詢與憑證預覽
+      </button>
+      <button type="button" class="tab-btn" data-tab="batch" id="tabBtnBatch">
+        📑 批次 CSV 試算與一鍵打包 ZIP 憑證包
+        <span class="tab-badge" id="batchCountBadge" hidden>0</span>
+      </button>
+    </div>
+
+    <!-- ==================== Tab 1: 單筆即時查詢 ==================== -->
+    <section class="tab-panel active" id="panelSingle">
+      <div class="single-grid">
+        <!-- 左側：查詢表單 -->
+        <div class="card">
+          <div class="card-header">
+            <h2>單筆航線碳排查詢</h2>
+            <div class="segmented-control" id="singleModeSwitch">
+              <button type="button" class="seg-btn active" data-mode="CARGO">📦 航空貨運 (CARGO)</button>
+              <button type="button" class="seg-btn" data-mode="PASSENGER">🧳 商務差旅 (PASSENGER)</button>
+            </div>
+          </div>
+
+          <form id="singleLookupForm" class="lookup-form">
+            <div class="airport-row">
+              <div class="form-group">
+                <label for="singleOrigin">起飛機場 (IATA 3碼 或 ICAO 4碼)</label>
+                <input
+                  type="text"
+                  id="singleOrigin"
+                  list="airportDatalist"
+                  placeholder="例如：TPE 或 RCTP (桃園)"
+                  value="TPE"
+                  required
+                  autocomplete="off"
+                />
+                <small class="field-hint" id="singleOriginHint">臺灣桃園國際機場 (TPE / RCTP)</small>
+              </div>
+
+              <button type="button" class="btn-swap" id="btnSwapAirports" title="交換起訖機場">⇄</button>
+
+              <div class="form-group">
+                <label for="singleDest">目的機場 (IATA 3碼 或 ICAO 4碼)</label>
+                <input
+                  type="text"
+                  id="singleDest"
+                  list="airportDatalist"
+                  placeholder="例如：LAX、PVG、FRA"
+                  value="LAX"
+                  required
+                  autocomplete="off"
+                />
+                <small class="field-hint" id="singleDestHint">洛杉磯國際機場 (LAX / KLAX)</small>
+              </div>
+            </div>
+
+            <!-- 常用熱門航線快捷鍵 -->
+            <div class="quick-routes">
+              <span class="quick-label">熱門航線：</span>
+              <button type="button" class="chip" data-origin="TPE" data-dest="LAX">TPE → LAX</button>
+              <button type="button" class="chip" data-origin="TPE" data-dest="PVG">TPE → PVG</button>
+              <button type="button" class="chip" data-origin="TPE" data-dest="FRA">TPE → FRA</button>
+              <button type="button" class="chip" data-origin="TPE" data-dest="NRT">TPE → NRT</button>
+              <button type="button" class="chip" data-origin="TPE" data-dest="SIN">TPE → SIN</button>
+              <button type="button" class="chip" data-origin="TPE" data-dest="HKG">TPE → HKG</button>
+            </div>
+
+            <!-- 貨運參數區 -->
+            <div id="cargoFields" class="dynamic-fields">
+              <div class="form-group">
+                <label for="singleWeightKg">貨運總重量 (公斤 KG)</label>
+                <div class="input-with-presets">
+                  <input type="number" id="singleWeightKg" min="0.1" step="0.1" value="1000" required />
+                  <div class="preset-btns">
+                    <button type="button" class="chip-sm" data-weight="1">1 kg</button>
+                    <button type="button" class="chip-sm" data-weight="100">100 kg</button>
+                    <button type="button" class="chip-sm" data-weight="1000">1,000 kg (1噸)</button>
+                    <button type="button" class="chip-sm" data-weight="5000">5,000 kg</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 差旅參數區 -->
+            <div id="passengerFields" class="dynamic-fields" hidden>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="singlePassengers">搭乘人數 (PAX)</label>
+                  <input type="number" id="singlePassengers" min="1" step="1" value="1" />
+                </div>
+                <div class="form-group">
+                  <label for="singleCabinClass">艙等 (Cabin Class)</label>
+                  <select id="singleCabinClass">
+                    <option value="ECONOMY">經濟艙 (ECONOMY)</option>
+                    <option value="PREMIUM_ECONOMY">豪華經濟艙 (PREMIUM_ECONOMY)</option>
+                    <option value="BUSINESS">商務艙 (BUSINESS)</option>
+                    <option value="FIRST">頭等艙 (FIRST)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-block" id="btnSingleSubmit">
+                ⚡ 立即查詢碳排與官方截圖憑證
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 右側：單筆查詢結果與 R2 官方截圖預覽 -->
+        <div class="card" id="singleResultCard">
+          <div class="card-header">
+            <h2>MRV 查證結果與憑證預覽</h2>
+            <span class="source-badge" id="singleSourceBadge">等待查詢</span>
+          </div>
+
+          <div id="singleEmptyState" class="empty-state">
+            <div class="empty-icon">🌍</div>
+            <p>請在左側輸入起訖機場並點擊「立即查詢」，或點擊上方「載入範例」快速測試。</p>
+          </div>
+
+          <div id="singleResultContent" hidden>
+            <!-- 航線標頭 -->
+            <div class="route-summary-banner">
+              <div class="route-airports">
+                <div class="route-node">
+                  <span class="airport-code" id="resOriginCode">TPE</span>
+                  <span class="airport-icao" id="resOriginIcao">RCTP</span>
+                  <span class="airport-name" id="resOriginName">臺灣桃園國際機場</span>
+                </div>
+                <div class="route-arrow">
+                  <span class="route-mode-tag" id="resModeTag">CARGO</span>
+                  <div class="arrow-line">────────✈️────────►</div>
+                  <span class="route-dist-tag" id="resDistanceKm">-- km</span>
+                </div>
+                <div class="route-node">
+                  <span class="airport-code" id="resDestCode">LAX</span>
+                  <span class="airport-icao" id="resDestIcao">KLAX</span>
+                  <span class="airport-name" id="resDestName">洛杉磯國際機場</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 核心碳排指標卡 -->
+            <div class="kpi-grid">
+              <div class="kpi-box kpi-highlight">
+                <span class="kpi-label">本次總碳排放量 (Total CO₂)</span>
+                <strong class="kpi-val" id="resTotalCo2Kg">--</strong>
+                <span class="kpi-sub" id="resTotalCo2Tonnes">-- 公噸 (tCO₂)</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">單位排放係數 (Unit Factor)</span>
+                <strong class="kpi-val" id="resUnitCo2">--</strong>
+                <span class="kpi-sub" id="resUnitLabel">kg CO₂ / 單位</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-label">航程距離 / 整機參考油耗</span>
+                <strong class="kpi-val" id="resDistAndFuel">--</strong>
+                <span class="kpi-sub" id="resMethodVersion">--</span>
+              </div>
+            </div>
+
+            <!-- MRV 查證元資料表 -->
+            <div class="mrv-meta-box">
+              <div class="meta-row">
+                <span class="meta-key">資料來源標記 (data_source)：</span>
+                <strong class="meta-val" id="resDataSource">--</strong>
+              </div>
+              <div class="meta-row">
+                <span class="meta-key">官方截圖時間 (captured_at)：</span>
+                <span class="meta-val" id="resCapturedAt">--</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-key">R2 憑證公開網址 (r2_image_url)：</span>
+                <span class="meta-val" id="resR2UrlBox">--</span>
+              </div>
+            </div>
+
+            <!-- R2 官方截圖預覽區 / GCD 排隊提示 -->
+            <div class="screenshot-section">
+              <div id="singleImageWrap" class="image-preview-wrap" hidden>
+                <div class="image-toolbar">
+                  <span>📸 ICAO 官方計算機原始截圖憑證 (Cloudflare R2)</span>
+                  <div class="image-actions">
+                    <a id="btnOpenOriginalImg" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline">
+                      🔗 開啟 R2 原圖
+                    </a>
+                    <button type="button" id="btnDownloadSingleImg" class="btn btn-sm btn-primary">
+                      ⬇️ 下載單張截圖 (.png)
+                    </button>
+                    <button type="button" id="btnAddSingleToBatch" class="btn btn-sm btn-secondary">
+                      ➕ 加入批次報表清單
+                    </button>
+                  </div>
+                </div>
+                <div class="image-frame">
+                  <img id="singlePreviewImg" src="" alt="ICAO Official Screenshot" loading="lazy" />
+                </div>
+              </div>
+
+              <div id="singleFallbackNotice" class="fallback-notice" hidden>
+                <div class="fallback-title">⏳ 此航線目前為 Haversine 大圓距離動態試算值 (GCD_FALLBACK)</div>
+                <p id="singleFallbackDesc">
+                  系統已依起訖機場真實經緯度計算大圓距離，並自動將此航線寫入 <code>scrape_queue</code> 排隊補抓官方截圖。待背景 Worker 執行完畢後，再次查詢即可取得 Cloudflare R2 官方原圖。
+                </p>
+                <button type="button" id="btnAddFallbackToBatch" class="btn btn-sm btn-secondary">
+                  ➕ 仍將此筆試算加入批次報表清單
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Tab 2: 批次上傳與一鍵打包下載 ==================== -->
+    <section class="tab-panel" id="panelBatch">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>批次航線碳排計算與 R2 官方憑證 ZIP 一鍵打包</h2>
+            <p class="card-desc">支援 CSV 批次匯入、線上直接增刪修改，並將碳排報表與 Cloudflare R2 官方截圖一鍵打包為單一查證 ZIP 檔。</p>
+          </div>
+          <div class="batch-header-actions">
+            <button type="button" class="btn btn-outline" id="btnDownloadTemplate">
+              📄 下載 CSV 範本檔
+            </button>
+            <button type="button" class="btn btn-outline" id="btnAddManualRow">
+              ➕ 新增一列航線
+            </button>
+            <button type="button" class="btn btn-danger-outline" id="btnClearBatch">
+              🗑️ 清空清單
+            </button>
+          </div>
+        </div>
+
+        <!-- CSV 拖曳上傳區 -->
+        <div class="dropzone" id="csvDropzone">
+          <input type="file" id="csvFileInput" accept=".csv,.txt" hidden />
+          <div class="dropzone-content">
+            <span class="dropzone-icon">📂</span>
+            <div>
+              <strong>拖曳 CSV 檔案至此處，或點擊選取檔案上傳</strong>
+              <p>支援欄位：<code>origin, dest, transport_mode, weight_kg, passengers, cabin_class, label</code>（或直接點擊上方「載入空運範例 / 差旅範例」）</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 批次統計摘要與 ZIP 打包操作列 -->
+        <div class="batch-summary-bar" id="batchSummaryBar">
+          <div class="summary-metrics">
+            <div class="metric-item">
+              <span>總筆數</span>
+              <strong id="batchTotalRows">0</strong>
+            </div>
+            <div class="metric-item metric-official">
+              <span>官方憑證 (ICAO_OFFICIAL)</span>
+              <strong id="batchOfficialRows">0</strong>
+            </div>
+            <div class="metric-item metric-fallback">
+              <span>大圓試算 (GCD_FALLBACK)</span>
+              <strong id="batchFallbackRows">0</strong>
+            </div>
+            <div class="metric-item metric-co2">
+              <span>總碳排合計</span>
+              <strong id="batchTotalCo2">0.00 kg CO₂ (0.0000 t)</strong>
+            </div>
+          </div>
+
+          <div class="batch-export-actions">
+            <button type="button" class="btn btn-outline" id="btnRecalculateBatch">
+              🔄 重新查詢 / 更新快取
+            </button>
+            <button type="button" class="btn btn-outline" id="btnExportCsvOnly">
+              📊 僅下載 CSV 報表
+            </button>
+            <button type="button" class="btn btn-primary btn-zip" id="btnDownloadZip">
+              📦 一鍵打包下載 ZIP (含 R2 官方原圖 + 查證報表)
+            </button>
+          </div>
+        </div>
+
+        <!-- ZIP 打包進度條 -->
+        <div id="zipProgressBox" class="zip-progress-box" hidden>
+          <div class="zip-progress-header">
+            <span id="zipProgressText">正在打包 R2 官方截圖與碳排明細報表...</span>
+            <strong id="zipProgressPercent">0%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="zipProgressFill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 批次結果明細表格 -->
+        <div class="table-responsive">
+          <table class="data-table" id="batchTable">
+            <thead>
+              <tr>
+                <th class="col-check">
+                  <input type="checkbox" id="checkAllRows" checked title="全選 / 取消全選" />
+                </th>
+                <th>#</th>
+                <th>提單 / 差旅單號備註</th>
+                <th>起飛機場</th>
+                <th>目的機場</th>
+                <th>模式 / 艙等</th>
+                <th>重量 (KG) / 人數</th>
+                <th>航程距離</th>
+                <th>單位碳排</th>
+                <th>總碳排 (kg CO₂)</th>
+                <th>資料來源 (MRV)</th>
+                <th>官方截圖時間 (captured_at)</th>
+                <th>R2 官方截圖憑證</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="batchTableBody">
+              <tr class="empty-row">
+                <td colspan="14">
+                  尚無批次資料。請點擊上方「📦 載入空運範例」、「✈️ 載入差旅範例」或上傳 CSV 檔案。
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 機場自動完成 Datalist -->
+  <datalist id="airportDatalist"></datalist>
+
+  <!-- 截圖放大檢視 Modal -->
+  <div class="modal-backdrop" id="imageModal" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modalTitle">ICAO 官方截圖憑證預覽</h3>
+        <button type="button" class="btn-close" id="btnCloseModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <img id="modalImage" src="" alt="ICAO Official Evidence" />
+      </div>
+      <div class="modal-footer">
+        <span id="modalMetaText" class="modal-meta"></span>
+        <div class="modal-actions">
+          <a id="modalOpenUrl" href="#" target="_blank" rel="noopener" class="btn btn-outline">🔗 新分頁開啟原圖</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部版權與架構資訊 -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>ICAO Carbon Emissions MRV Platform v2.0 · Neon PostgreSQL + Cloudflare R2 + Cloudflare Pages</span>
+      <span>遵循零假預設值與零 AI Token 原則 · 所有試算與官方憑證完全可追溯</span>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

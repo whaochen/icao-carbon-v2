@@ -1,0 +1,20 @@
+# 環境變數與金鑰
+.env
+.env.local
+
+# 截圖暫存區（所有正式圖檔只存 Cloudflare R2，不進 Git）
+tmp_screenshots/
+*.png
+*.jpg
+*.webp
+
+# Python 環境
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# 前端與系統檔
+node_modules/
+.wrangler/
+.DS_Store

@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="./styles.css" />
   <!-- JSZip CDN：純前端無 Token 打包 R2 官方截圖與 CSV 查證報表 -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- 晧脈元素庫 · Hao Element Matrix 回航徽章 Web Component -->
+  <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
 </head>
 <body>
   <!-- 來源提示列（當網址帶有 ?from=hao-element-matrix 時自動顯示） -->
@@ -60,9 +62,7 @@
           <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
             ↻
           </button>
-          <a href="https://hao-element-matrix.pages.dev/" class="btn-return-matrix" title="返回晧脈元素庫主控台">
-            ⇄ 返航：晧脈元素庫
-          </a>
+          <hao-element-badge symbol="Ti" theme="dark"></hao-element-badge>
         </div>
       </div>
 
@@ -574,7 +574,7 @@
       </div>
       <div class="footer-nav">
         <span>遵循零假預設值與零 AI Token 原則 · 所有試算與官方憑證完全可追溯</span>
-        <a href="https://hao-element-matrix.pages.dev/" class="footer-return-link">⇄ 返航：晧脈元素庫</a>
+        <hao-element-badge symbol="Ti" theme="light"></hao-element-badge>
       </div>
     </div>
   </footer>

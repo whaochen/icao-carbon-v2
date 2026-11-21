@@ -20,47 +20,154 @@
   <!-- 頂部品牌與即時資料庫狀態列 -->
   <header class="topbar">
     <div class="container topbar-inner">
-      <div class="brand">
-        <a href="https://hao-element-matrix.pages.dev/" class="element-tile" title="晧脈元素庫 · 第 22 號元素：鈦 (Titanium)">
-          <div class="element-top">
-            <span class="element-number">22</span>
-            <span class="element-mass">47.867</span>
+      <!-- 左側：Ti · 22 元素徽章、系統標題與四格數據統計列 -->
+      <div class="topbar-left">
+        <div class="brand">
+          <a href="https://hao-element-matrix.pages.dev/" class="element-tile" title="晧脈元素庫 · 第 22 號元素：鈦 (Titanium)">
+            <div class="element-top">
+              <span class="element-number">22</span>
+              <span class="element-mass">47.867</span>
+            </div>
+            <div class="element-symbol">Ti</div>
+            <div class="element-name">鈦 · Titanium</div>
+          </a>
+          <div>
+            <div class="brand-title-row">
+              <h1 class="brand-title">航線碳排與ICAO截圖快取中心</h1>
+              <span class="element-member-tag">Ti · 22 晧脈元素庫成員</span>
+            </div>
+            <p class="brand-subtitle">ISO 14064-1 / 範疇三類別 4 &amp; 6 查證憑證庫 · 零 AI Token 純演算法引擎 · Cloudflare R2 原圖存證</p>
           </div>
-          <div class="element-symbol">Ti</div>
-          <div class="element-name">鈦 · Titanium</div>
-        </a>
-        <div>
-          <div class="brand-title-row">
-            <h1 class="brand-title">航線碳排與ICAO截圖快取中心</h1>
-            <span class="element-member-tag">Ti · 22 晧脈元素庫成員</span>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-pill">
+            <span class="stat-label">全球機場字典</span>
+            <strong class="stat-value" id="statAirports">--</strong>
           </div>
-          <p class="brand-subtitle">ISO 14064-1 / 範疇三類別 4 &amp; 6 查證憑證庫 · 零 AI Token 純演算法引擎 · Cloudflare R2 原圖存證</p>
+          <div class="stat-pill stat-official">
+            <span class="stat-label">已收錄官方航線</span>
+            <strong class="stat-value" id="statCached">--</strong>
+          </div>
+          <div class="stat-pill stat-r2">
+            <span class="stat-label">R2 官方截圖憑證</span>
+            <strong class="stat-value" id="statR2Images">--</strong>
+          </div>
+          <div class="stat-pill stat-queue">
+            <span class="stat-label">佇列排隊補圖中</span>
+            <strong class="stat-value" id="statQueuePending">--</strong>
+          </div>
+          <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
+            ↻
+          </button>
+          <a href="https://hao-element-matrix.pages.dev/" class="btn-return-matrix" title="返回晧脈元素庫主控台">
+            ⇄ 返航：晧脈元素庫
+          </a>
         </div>
       </div>
 
-      <div class="stats-bar" id="statsBar">
-        <div class="stat-pill">
-          <span class="stat-label">全球機場字典</span>
-          <strong class="stat-value" id="statAirports">--</strong>
+      <!-- 右側：純 SVG + CSS 飛機環繞地球大圓航線軌道動畫 (桌機寬螢幕顯示) -->
+      <div class="topbar-orbit-visual" aria-hidden="true">
+        <div class="orbit-hud-tag">
+          <span class="hud-dot"></span>
+          <span>GCD · MRV LIVE ORBIT</span>
         </div>
-        <div class="stat-pill stat-official">
-          <span class="stat-label">已收錄官方航線</span>
-          <strong class="stat-value" id="statCached">--</strong>
-        </div>
-        <div class="stat-pill stat-r2">
-          <span class="stat-label">R2 官方截圖憑證</span>
-          <strong class="stat-value" id="statR2Images">--</strong>
-        </div>
-        <div class="stat-pill stat-queue">
-          <span class="stat-label">佇列排隊補圖中</span>
-          <strong class="stat-value" id="statQueuePending">--</strong>
-        </div>
-        <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
-          ↻
-        </button>
-        <a href="https://hao-element-matrix.pages.dev/" class="btn-return-matrix" title="返回晧脈元素庫主控台">
-          ⇄ 返航：晧脈元素庫
-        </a>
+        <svg class="globe-orbit-svg" viewBox="0 0 280 136" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- 地球大氣層微光漸層 -->
+            <radialGradient id="globeAtmosGrad" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.28" />
+              <stop offset="65%" stop-color="#38bdf8" stop-opacity="0.12" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+            </radialGradient>
+            <!-- 航線發光尾跡漸層 -->
+            <linearGradient id="contrailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05" />
+              <stop offset="50%" stop-color="#34d399" stop-opacity="0.85" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.15" />
+            </linearGradient>
+            <!-- 機場節點光暈濾鏡 -->
+            <filter id="glowFilter" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <!-- 主大圓航線軌道運動路徑 (傾斜 -18 度) -->
+            <path id="mainGreatCirclePath" d="M 32,96 A 114,34 -18 1,1 248,40 A 114,34 -18 1,1 32,96 Z" />
+          </defs>
+
+          <!-- 外圍大氣層光暈 -->
+          <circle cx="140" cy="68" r="56" fill="url(#globeAtmosGrad)" />
+
+          <!-- 次要交叉大圓虛線軌道 (傾斜 +22 度) -->
+          <ellipse
+            cx="140"
+            cy="68"
+            rx="102"
+            ry="27"
+            transform="rotate(22 140 68)"
+            fill="none"
+            stroke="#38bdf8"
+            stroke-width="1"
+            stroke-dasharray="3 5"
+            stroke-opacity="0.32"
+          />
+
+          <!-- 科技感線框地球本體 -->
+          <g class="globe-wireframe">
+            <circle cx="140" cy="68" r="42" fill="#0f172a" fill-opacity="0.65" stroke="#38bdf8" stroke-width="1.3" stroke-opacity="0.65" />
+            <!-- 緯度線 -->
+            <ellipse cx="140" cy="68" rx="42" ry="14" fill="none" stroke="#0ea5e9" stroke-width="0.8" stroke-opacity="0.38" />
+            <ellipse cx="140" cy="52" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <ellipse cx="140" cy="84" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <!-- 緩慢自轉經度線群 -->
+            <ellipse class="globe-meridian m-1" cx="140" cy="68" rx="14" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.42" />
+            <ellipse class="globe-meridian m-2" cx="140" cy="68" rx="30" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.32" />
+            <line x1="140" y1="26" x2="140" y2="110" stroke="#38bdf8" stroke-width="0.75" stroke-opacity="0.35" stroke-dasharray="2 3" />
+          </g>
+
+          <!-- 主大圓航線軌道 (虛線底軌 + 動態流動發光尾跡) -->
+          <use href="#mainGreatCirclePath" fill="none" stroke="#38bdf8" stroke-width="1.15" stroke-dasharray="4 4" stroke-opacity="0.45" />
+          <use href="#mainGreatCirclePath" class="orbit-contrail-flow" fill="none" stroke="url(#contrailGrad)" stroke-width="2.2" filter="url(#glowFilter)" />
+
+          <!-- 地球與軌道上的微閃樞紐機場節點 (TPE / LAX / FRA / SIN) -->
+          <g class="hub-nodes">
+            <!-- TPE 節點 -->
+            <circle class="hub-pulse" cx="162" cy="54" r="2.6" fill="#34d399" filter="url(#glowFilter)" />
+            <text x="168" y="52" fill="#6ee7b7" font-size="7.5" font-weight="700" letter-spacing="0.5">TPE</text>
+
+            <!-- LAX 節點 -->
+            <circle class="hub-pulse delay-1" cx="246" cy="40" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="234" y="31" fill="#7dd3fc" font-size="7" font-weight="700">LAX</text>
+
+            <!-- FRA 節點 -->
+            <circle class="hub-pulse delay-2" cx="34" cy="95" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="24" y="110" fill="#7dd3fc" font-size="7" font-weight="700">FRA</text>
+
+            <!-- PVG 節點 -->
+            <circle class="hub-pulse delay-3" cx="122" cy="48" r="2" fill="#38bdf8" />
+          </g>
+
+          <!-- 沿主大圓軌道平滑循環飛行的向量客機 -->
+          <g filter="url(#glowFilter)">
+            <!-- 機身後方柔和尾焰光暈 -->
+            <path d="M -16,0 L -4,-1.8 L -4,1.8 Z" fill="#34d399" fill-opacity="0.75">
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+            <!-- 向量噴射客機圖示 (朝向 +X 軸以配合 rotate="auto") -->
+            <path
+              d="M 9,0 L 3,-1.6 L -1,-8.5 L -3.5,-8.5 L -1.5,-1.6 L -6,-1.4 L -8.2,-4.5 L -9.8,-4.5 L -8.4,0 L -9.8,4.5 L -8.2,4.5 L -6,1.4 L -1.5,1.6 L -3.5,8.5 L -1,8.5 L 3,1.6 Z"
+              fill="#f8fafc"
+              stroke="#38bdf8"
+              stroke-width="0.5"
+            >
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+          </g>
+        </svg>
       </div>
     </div>
   </header>

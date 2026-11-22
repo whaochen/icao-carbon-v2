@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全球航空GHG排放計算器 · 操作與實踐指引 ｜ 晧脈元素庫</title>
+  <link rel="stylesheet" href="./guide.css" />
+  <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
+</head>
+<body>
+  <!-- 頂部雙層旗艦 Banner（與主頁、/architecture 100% 一致） -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-left">
+        <div class="brand">
+          <a href="https://hao-element-matrix.pages.dev/" class="element-tile" title="晧脈元素庫 · 第 22 號元素：鈦 (Titanium)">
+            <div class="element-top">
+              <span class="element-number">22</span>
+              <span class="element-mass">47.867</span>
+            </div>
+            <div class="element-symbol">Ti</div>
+            <div class="element-name">鈦 · Titanium</div>
+          </a>
+          <div>
+            <div class="brand-title-row">
+              <h1 class="brand-title">全球航空GHG排放計算器</h1>
+            </div>
+            <p class="brand-subtitle">ISO 14064-1 類別 3 · GHG Protocol 範疇三類別 4 &amp; 6 查證憑證庫 · 操作與實踐指引手冊</p>
+          </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-pill">
+            <span class="stat-label">全球機場字典</span>
+            <strong class="stat-value" id="statAirports">--</strong>
+          </div>
+          <div class="stat-pill stat-official">
+            <span class="stat-label">已收錄官方航線</span>
+            <strong class="stat-value" id="statCached">--</strong>
+          </div>
+          <div class="stat-pill stat-r2">
+            <span class="stat-label">憑證原圖存證</span>
+            <strong class="stat-value" id="statR2Images">--</strong>
+          </div>
+          <div class="stat-pill stat-queue">
+            <span class="stat-label">佇列排隊補圖中</span>
+            <strong class="stat-value" id="statQueuePending">--</strong>
+          </div>
+          <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
+            ↻
+          </button>
+          <a href="../" class="btn-nav-pill" title="返回全球航空GHG排放計算器主頁">
+            ← 計算器主頁
+          </a>
+          <a href="../architecture/" class="btn-nav-pill" title="檢視系統架構與合規透明說明">
+            📐 系統架構與合規
+          </a>
+          <hao-element-badge symbol="Ti" theme="dark"></hao-element-badge>
+        </div>
+      </div>
+
+      <!-- 右側：純 SVG + CSS 飛機環繞地球大圓航線軌道動畫 -->
+      <div class="topbar-orbit-visual" aria-hidden="true">
+        <div class="orbit-hud-tag">
+          <span class="hud-dot"></span>
+          <span>GCD · MRV LIVE ORBIT</span>
+        </div>
+        <svg class="globe-orbit-svg" viewBox="0 0 280 136" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="globeAtmosGrad" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.28" />
+              <stop offset="65%" stop-color="#38bdf8" stop-opacity="0.12" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="contrailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05" />
+              <stop offset="50%" stop-color="#34d399" stop-opacity="0.85" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.15" />
+            </linearGradient>
+            <filter id="glowFilter" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <path id="mainGreatCirclePath" d="M 32,96 A 114,34 -18 1,1 248,40 A 114,34 -18 1,1 32,96 Z" />
+          </defs>
+
+          <circle cx="140" cy="68" r="56" fill="url(#globeAtmosGrad)" />
+
+          <ellipse
+            cx="140"
+            cy="68"
+            rx="102"
+            ry="27"
+            transform="rotate(22 140 68)"
+            fill="none"
+            stroke="#38bdf8"
+            stroke-width="1"
+            stroke-dasharray="3 5"
+            stroke-opacity="0.32"
+          />
+
+          <g class="globe-wireframe">
+            <circle cx="140" cy="68" r="42" fill="#0f172a" fill-opacity="0.65" stroke="#38bdf8" stroke-width="1.3" stroke-opacity="0.65" />
+            <ellipse cx="140" cy="68" rx="42" ry="14" fill="none" stroke="#0ea5e9" stroke-width="0.8" stroke-opacity="0.38" />
+            <ellipse cx="140" cy="52" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <ellipse cx="140" cy="84" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <ellipse class="globe-meridian m-1" cx="140" cy="68" rx="14" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.42" />
+            <ellipse class="globe-meridian m-2" cx="140" cy="68" rx="30" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.32" />
+            <line x1="140" y1="26" x2="140" y2="110" stroke="#38bdf8" stroke-width="0.75" stroke-opacity="0.35" stroke-dasharray="2 3" />
+          </g>
+
+          <use href="#mainGreatCirclePath" fill="none" stroke="#38bdf8" stroke-width="1.15" stroke-dasharray="4 4" stroke-opacity="0.45" />
+          <use href="#mainGreatCirclePath" class="orbit-contrail-flow" fill="none" stroke="url(#contrailGrad)" stroke-width="2.2" filter="url(#glowFilter)" />
+
+          <g class="hub-nodes">
+            <circle class="hub-pulse" cx="162" cy="54" r="2.6" fill="#34d399" filter="url(#glowFilter)" />
+            <text x="168" y="52" fill="#6ee7b7" font-size="7.5" font-weight="700" letter-spacing="0.5">TPE</text>
+
+            <circle class="hub-pulse delay-1" cx="246" cy="40" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="234" y="31" fill="#7dd3fc" font-size="7" font-weight="700">LAX</text>
+
+            <circle class="hub-pulse delay-2" cx="34" cy="95" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="24" y="110" fill="#7dd3fc" font-size="7" font-weight="700">FRA</text>
+
+            <circle class="hub-pulse delay-3" cx="122" cy="48" r="2" fill="#38bdf8" />
+          </g>
+
+          <g class="orbit-plane-group" filter="url(#glowFilter)">
+            <path d="M -16,0 L -4,-1.8 L -4,1.8 Z" fill="#34d399" fill-opacity="0.75">
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+            <path
+              d="M 9,0 L 3,-1.6 L -1,-8.5 L -3.5,-8.5 L -1.5,-1.6 L -6,-1.4 L -8.2,-4.5 L -9.8,-4.5 L -8.4,0 L -9.8,4.5 L -8.2,4.5 L -6,1.4 L -1.5,1.6 L -3.5,8.5 L -1,8.5 L 3,1.6 Z"
+              fill="#f8fafc"
+              stroke="#38bdf8"
+              stroke-width="0.5"
+            >
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- 純白導覽條與三大指引區塊錨點 -->
+  <nav class="subnav" aria-label="操作指引章節導覽">
+    <div class="container subnav-inner">
+      <div class="subnav-links">
+        <a href="#sec-steps" class="subnav-link active">01 · 操作三步驟與 CSV 規格</a>
+        <a href="#sec-evidence" class="subnav-link">02 · 佐證溯源四層證據鏈</a>
+        <a href="#sec-faq" class="subnav-link">03 · 查證與操作常見問題 FAQ</a>
+      </div>
+      <span class="subnav-badge">HEM-GUIDE-Ti 操作實踐手冊</span>
+    </div>
+  </nav>
+
+  <main class="container main-content">
+    <!-- ==================== Block 01：操作三步驟與批次 CSV 欄位規格 ==================== -->
+    <section class="guide-card" id="sec-steps">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">SECTION 01 · WORKFLOW &amp; CSV SPECIFICATION</span>
+          <h2>操作三步驟與批次 CSV 欄位規格</h2>
+        </div>
+        <span class="sec-pill">無須 AI Token · 純確定性查證流程</span>
+      </div>
+
+      <div class="steps-grid">
+        <article class="step-box">
+          <div class="step-badge">STEP 01</div>
+          <h3>單筆免登入抽測</h3>
+          <p>
+            進入計算器主頁後，輸入起訖機場代碼（支援 3 碼 IATA 如 <code>TPE</code> 或 4 碼 ICAO 如 <code>RCTP</code>），選擇「航空貨運」或「商務差旅」並填入重量或人數，即可免登入即時計算；亦可直接點擊上方「載入空運範例 / 差旅範例」體驗。
+          </p>
+        </article>
+
+        <article class="step-box step-box-highlight">
+          <div class="step-badge">STEP 02</div>
+          <h3>證據等級判讀</h3>
+          <p>
+            系統優先比對官方快取（<code>ICAO_OFFICIAL</code> / <code>OFFICIAL_CACHE</code>），命中即附完整原圖截圖與航段明細；若尚未收錄則自動以機場真實經緯度計算球面大圓距離（<code>GCD_FALLBACK</code>）並排隊補圖。
+          </p>
+        </article>
+
+        <article class="step-box">
+          <div class="step-badge">STEP 03</div>
+          <h3>瀏覽器端零留存 ZIP 打包</h3>
+          <p>
+            於批次模式上傳 CSV 清冊並核對計算結果後，點擊「一鍵打包下載 ZIP」，系統將於您的瀏覽器本機即時彙整 <code>carbon_report.csv</code>、查證說明書與所有對應 <code>.png</code> 原圖憑證，關閉分頁即清空，絕不留存企業機敏清冊。
+          </p>
+        </article>
+      </div>
+
+      <div class="csv-spec-box">
+        <div class="csv-spec-header">
+          <div>
+            <h3>📄 批次上傳 CSV 欄位規格表</h3>
+            <p>支援 UTF-8 編碼（含 Excel 匯出之 UTF-8 BOM），系統自動相容中英文常見欄位別名。</p>
+          </div>
+          <button type="button" class="btn-copy-csv" id="btnCopyCsvHeader">
+            📋 複製批次 CSV 範本欄位
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="spec-table">
+            <thead>
+              <tr>
+                <th>欄位名稱（標準鍵）</th>
+                <th>相容別名</th>
+                <th>必填</th>
+                <th>格式與範例值</th>
+                <th>MRV 查證用途說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>origin</code></td>
+                <td><code>origin_code</code>、起飛機場</td>
+                <td><span class="req-badge">必填</span></td>
+                <td>3 碼 IATA 或 4 碼 ICAO（例：<code>TPE</code>、<code>RCTP</code>）</td>
+                <td>自動對應機場座標字典轉換為標準 4 碼 ICAO 代碼。</td>
+              </tr>
+              <tr>
+                <td><code>destination</code></td>
+                <td><code>dest</code>、<code>dest_code</code>、目的機場</td>
+                <td><span class="req-badge">必填</span></td>
+                <td>3 碼 IATA 或 4 碼 ICAO（例：<code>LAX</code>、<code>KLAX</code>）</td>
+                <td>與起飛機場配對比對官方航線快取或計算 Haversine 大圓距離。</td>
+              </tr>
+              <tr>
+                <td><code>mode</code></td>
+                <td><code>transport_mode</code>、模式</td>
+                <td>選填</td>
+                <td><code>CARGO</code>（預設）或 <code>PASSENGER</code></td>
+                <td>區分範疇三類別 4（空運貨運）或類別 6（商務差旅）。</td>
+              </tr>
+              <tr>
+                <td><code>weight_kg</code> / <code>passengers</code></td>
+                <td>重量(KG) / 人數(PAX)</td>
+                <td>依模式</td>
+                <td>貨運填公斤數（例：<code>1250</code>）；差旅填人數（例：<code>2</code>）</td>
+                <td>作為活動數據乘數，精算總碳排放量（kg CO₂ 與公噸 tCO₂）。</td>
+              </tr>
+              <tr>
+                <td><code>cabin_class</code></td>
+                <td>艙等</td>
+                <td>差旅選填</td>
+                <td><code>ECONOMY</code>、<code>PREMIUM_ECONOMY</code>、<code>BUSINESS</code>、<code>FIRST</code></td>
+                <td>貨運固定為 <code>CARGO_1KG</code>；差旅預設為 <code>ECONOMY</code>。</td>
+              </tr>
+              <tr>
+                <td><code>ref_doc_id</code></td>
+                <td><code>label</code>、提單、差旅單號</td>
+                <td>建議填寫</td>
+                <td><code>AWB-2026-001</code>、<code>TRV-2026-101</code></td>
+                <td><strong>原始提單／差旅單號回溯鍵</strong>，確保外部查證時可一對一追查原始憑證。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Block 02：佐證溯源四層證據鏈與實務 SOP ==================== -->
+    <section class="guide-card" id="sec-evidence">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">SECTION 02 · MRV TRACEABILITY CHAIN &amp; STANDARD MAPPING</span>
+          <h2>佐證溯源四層證據鏈與實務 SOP</h2>
+        </div>
+        <span class="sec-pill sec-pill-emerald">ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 6</span>
+      </div>
+
+      <p class="section-intro">
+        為協助盤查人員順利通過第三方查證（Verification），每筆計算結果與匯出之 ZIP 憑證包均內建完整的四層可追溯證據鏈：
+      </p>
+
+      <div class="chain-grid">
+        <article class="chain-card">
+          <span class="chain-layer">第 1 層 · ACTIVITY KEY</span>
+          <h3>活動數據回溯鍵</h3>
+          <p>對應企業內部原始單據編號（<code>ref_doc_id</code> / <code>label</code>），如空運提單（AWB）、報關單或員工差旅核銷單號，並記錄實際貨重（KG）或搭乘人次（PAX）。</p>
+        </article>
+
+        <article class="chain-card">
+          <span class="chain-layer">第 2 層 · METHODOLOGY</span>
+          <h3>方法學與係數出處</h3>
+          <p>明確載明採用之方法學版本（<code>icao_method_version</code>）、單位排放係數（kg CO₂ / 單位）及整機參考油耗，確保計算過程可被第三方獨立驗算重現。</p>
+        </article>
+
+        <article class="chain-card">
+          <span class="chain-layer">第 3 層 · EVIDENCE TIER</span>
+          <h3>證據等級碼</h3>
+          <p>嚴格區分 <code>ICAO_OFFICIAL</code>（<code>OFFICIAL_CACHE</code> 官方快取實證）與 <code>GCD_FALLBACK</code>（球面大圓距離確定性試算），絕不混充或寫死假預設值。</p>
+        </article>
+
+        <article class="chain-card">
+          <span class="chain-layer">第 4 層 · ARTIFACT ARCHIVE</span>
+          <h3>原圖與 UTC+8 時間戳封存</h3>
+          <p>針對已收錄官方航線，完整保存原始計算結果截圖（<code>.png</code> 含轉機航段與機型明細）與擷取時間戳記（<code>captured_at</code>），於查證包內提供對應檔名索引。</p>
+        </article>
+      </div>
+
+      <div class="sop-compare-box">
+        <h3>📊 盤查標準分類對照實務（ISO 14064-1 vs. GHG Protocol）</h3>
+        <div class="sop-grid">
+          <div class="sop-item">
+            <span class="sop-tag tag-cargo">航空貨運（CARGO）</span>
+            <ul>
+              <li><strong>ISO 14064-1:2018</strong>：歸類於 <strong>類別 3（間接運輸產生的溫室氣體排放）</strong> — 上下游貨物空運配送。</li>
+              <li><strong>GHG Protocol 企業價值鏈（範疇三）</strong>：歸類於 <strong>類別 4（上游運輸與配送）</strong>（或依實際付費責任界線對應類別 9 下游運輸）。</li>
+            </ul>
+          </div>
+          <div class="sop-item">
+            <span class="sop-tag tag-pax">商務差旅（PASSENGER）</span>
+            <ul>
+              <li><strong>ISO 14064-1:2018</strong>：歸類於 <strong>類別 3（間接運輸產生的溫室氣體排放）</strong> — 員工商務航空差旅。</li>
+              <li><strong>GHG Protocol 企業價值鏈（範疇三）</strong>：歸類於 <strong>類別 6（商務旅行 / Business Travel）</strong>，支援依艙等權重區分排放強度。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Block 03：查證與操作常見問題 FAQ ==================== -->
+    <section class="guide-card" id="sec-faq">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">SECTION 03 · VERIFICATION &amp; USAGE FAQ</span>
+          <h2>查證與操作常見問題 FAQ</h2>
+        </div>
+      </div>
+
+      <div class="faq-list" id="faqList">
+        <div class="faq-item is-open">
+          <button type="button" class="faq-question" aria-expanded="true">
+            <span>Q1：上傳批次 CSV 時若發生格式錯誤或機場代碼無法辨識，會扣除配額次數嗎？</span>
+            <span class="faq-icon">−</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              <strong>不會。</strong>本平台目前維持 <strong>L0 無償全面開放</strong>；且即使未來啟用 L1 批次試算額度控管，前端 CSV 欄位解析與格式檢核階段若發現缺漏或格式錯誤，系統會直接於瀏覽器端攔截提示修正，<strong>不計入任何配額扣次</strong>。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Q2：若清冊中有部分冷門航線顯示為 GCD_FALLBACK，在盤查報告書與查證時該如何交代？</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              <code>GCD_FALLBACK</code> 代表該航線暫無官方快取原圖，系統依起訖機場真實經緯度透過 <strong>Haversine 球面大圓距離公式</strong> 加上標準航路修正進行確定性推算，<strong>絕無寫死假距離</strong>，並已自動將該航線排入背景補圖佇列。查證時建議於清冊備註該筆為「二級活動數據確定性大圓距離試算」，若屬顯著排放熱點，可於背景補圖完成後重新查詢取得官方原圖憑證。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Q3：我們公司上傳的空運提單重量與差旅清冊，會被儲存在伺服器上嗎？</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              <strong>不會（零留存隱私保護）。</strong>批次 CSV 解析、總碳排彙整與 ZIP 查證憑證包壓縮打包，全數於您的<strong>瀏覽器本機端即時運算完成</strong>，伺服器端不儲存任何企業提單編號、貨重或差旅清冊明細；關閉瀏覽器分頁後，暫存資料即自動清空。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button type="button" class="faq-question" aria-expanded="false">
+            <span>Q4：報告書撰寫時，ISO 14064-1 與 GHG Protocol 的類別該如何對照填報？</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              依據國際盤查準則：在 <strong>ISO 14064-1:2018</strong> 架構下，航空貨運與員工航空商務差旅均歸屬於<strong>「類別 3：間接運輸產生的溫室氣體排放」</strong>；若企業同時編製 <strong>GHG Protocol 範疇三清冊</strong>，則空運貨運應分別對應至<strong>「類別 4（上游運輸與配送）」</strong>或類別 9，員工搭機出差則對應至<strong>「類別 6（商務旅行）」</strong>。您可直接至 <a href="../architecture/#sec-legal">系統架構頁一鍵複製引用聲明</a>。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 非阻斷式 Toast 提示 -->
+  <div class="toast" id="toastNotice" role="status" aria-live="polite" hidden></div>
+
+  <!-- 頁尾 -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <strong>全球航空GHG排放計算器 · 操作與實踐指引</strong>
+        <span>· Ti · 22 鈦 (Titanium)</span>
+      </div>
+      <div class="footer-nav">
+        <a href="../" class="footer-link">← 返回計算器主頁</a>
+        <a href="../architecture/" class="footer-link">📐 系統架構與合規</a>
+        <hao-element-badge symbol="Ti" theme="light"></hao-element-badge>
+      </div>
+      <div class="footer-disclaimer">
+        © 2026 晧脈元素庫（Hao Element Matrix）保留所有權利。本工具為獨立開發之盤查輔助估算平台，與 ICAO、環境部及 ISO 無官方背書關係；所有數據與方法學一律以原出處機關最新公告為準。
+      </div>
+    </div>
+  </footer>
+
+  <script src="./guide.js"></script>
+</body>
+</html>

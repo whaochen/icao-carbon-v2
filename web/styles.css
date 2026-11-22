@@ -344,6 +344,29 @@ body {
   color: #ffffff;
 }
 
+.btn-arch-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-arch-nav:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
 .stats-bar {
   display: flex;
   align-items: center;
@@ -1382,4 +1405,23 @@ body {
   background: var(--primary);
   color: #ffffff;
   border-color: var(--primary);
+}
+
+.footer-disclaimer {
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.footer-legal-link {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer-legal-link:hover {
+  text-decoration: underline;
 }

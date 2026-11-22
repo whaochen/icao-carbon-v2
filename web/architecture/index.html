@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全球航空GHG排放計算器 · 系統架構 ｜ 晧脈元素庫</title>
+  <link rel="stylesheet" href="./arch.css" />
+  <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
+</head>
+<body>
+  <!-- 頂部雙層旗艦 Banner（與主頁 100% 一致） -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-left">
+        <div class="brand">
+          <a href="https://hao-element-matrix.pages.dev/" class="element-tile" title="晧脈元素庫 · 第 22 號元素：鈦 (Titanium)">
+            <div class="element-top">
+              <span class="element-number">22</span>
+              <span class="element-mass">47.867</span>
+            </div>
+            <div class="element-symbol">Ti</div>
+            <div class="element-name">鈦 · Titanium</div>
+          </a>
+          <div>
+            <div class="brand-title-row">
+              <h1 class="brand-title">全球航空GHG排放計算器</h1>
+            </div>
+            <p class="brand-subtitle">ISO 14064-1 類別 3 · GHG Protocol 範疇三類別 4 &amp; 6 查證憑證庫 · 系統架構與合規透明中心</p>
+          </div>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-pill">
+            <span class="stat-label">全球機場字典</span>
+            <strong class="stat-value" id="statAirports">--</strong>
+          </div>
+          <div class="stat-pill stat-official">
+            <span class="stat-label">已收錄官方航線</span>
+            <strong class="stat-value" id="statCached">--</strong>
+          </div>
+          <div class="stat-pill stat-r2">
+            <span class="stat-label">憑證原圖存證</span>
+            <strong class="stat-value" id="statR2Images">--</strong>
+          </div>
+          <div class="stat-pill stat-queue">
+            <span class="stat-label">佇列排隊補圖中</span>
+            <strong class="stat-value" id="statQueuePending">--</strong>
+          </div>
+          <button type="button" class="btn-icon" id="btnRefreshStats" title="重新整理資料庫狀態">
+            ↻
+          </button>
+          <a href="../" class="btn-back-home" title="返回全球航空GHG排放計算器主頁">
+            ← 計算器主頁
+          </a>
+          <hao-element-badge symbol="Ti" theme="dark"></hao-element-badge>
+        </div>
+      </div>
+
+      <!-- 右側：純 SVG + CSS 飛機環繞地球大圓航線軌道動畫 -->
+      <div class="topbar-orbit-visual" aria-hidden="true">
+        <div class="orbit-hud-tag">
+          <span class="hud-dot"></span>
+          <span>GCD · MRV LIVE ORBIT</span>
+        </div>
+        <svg class="globe-orbit-svg" viewBox="0 0 280 136" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="globeAtmosGrad" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.28" />
+              <stop offset="65%" stop-color="#38bdf8" stop-opacity="0.12" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="contrailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05" />
+              <stop offset="50%" stop-color="#34d399" stop-opacity="0.85" />
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.15" />
+            </linearGradient>
+            <filter id="glowFilter" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <path id="mainGreatCirclePath" d="M 32,96 A 114,34 -18 1,1 248,40 A 114,34 -18 1,1 32,96 Z" />
+          </defs>
+
+          <circle cx="140" cy="68" r="56" fill="url(#globeAtmosGrad)" />
+
+          <ellipse
+            cx="140"
+            cy="68"
+            rx="102"
+            ry="27"
+            transform="rotate(22 140 68)"
+            fill="none"
+            stroke="#38bdf8"
+            stroke-width="1"
+            stroke-dasharray="3 5"
+            stroke-opacity="0.32"
+          />
+
+          <g class="globe-wireframe">
+            <circle cx="140" cy="68" r="42" fill="#0f172a" fill-opacity="0.65" stroke="#38bdf8" stroke-width="1.3" stroke-opacity="0.65" />
+            <ellipse cx="140" cy="68" rx="42" ry="14" fill="none" stroke="#0ea5e9" stroke-width="0.8" stroke-opacity="0.38" />
+            <ellipse cx="140" cy="52" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <ellipse cx="140" cy="84" rx="36" ry="9" fill="none" stroke="#0ea5e9" stroke-width="0.7" stroke-opacity="0.28" />
+            <ellipse class="globe-meridian m-1" cx="140" cy="68" rx="14" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.42" />
+            <ellipse class="globe-meridian m-2" cx="140" cy="68" rx="30" ry="42" fill="none" stroke="#38bdf8" stroke-width="0.85" stroke-opacity="0.32" />
+            <line x1="140" y1="26" x2="140" y2="110" stroke="#38bdf8" stroke-width="0.75" stroke-opacity="0.35" stroke-dasharray="2 3" />
+          </g>
+
+          <use href="#mainGreatCirclePath" fill="none" stroke="#38bdf8" stroke-width="1.15" stroke-dasharray="4 4" stroke-opacity="0.45" />
+          <use href="#mainGreatCirclePath" class="orbit-contrail-flow" fill="none" stroke="url(#contrailGrad)" stroke-width="2.2" filter="url(#glowFilter)" />
+
+          <g class="hub-nodes">
+            <circle class="hub-pulse" cx="162" cy="54" r="2.6" fill="#34d399" filter="url(#glowFilter)" />
+            <text x="168" y="52" fill="#6ee7b7" font-size="7.5" font-weight="700" letter-spacing="0.5">TPE</text>
+
+            <circle class="hub-pulse delay-1" cx="246" cy="40" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="234" y="31" fill="#7dd3fc" font-size="7" font-weight="700">LAX</text>
+
+            <circle class="hub-pulse delay-2" cx="34" cy="95" r="2.4" fill="#38bdf8" filter="url(#glowFilter)" />
+            <text x="24" y="110" fill="#7dd3fc" font-size="7" font-weight="700">FRA</text>
+
+            <circle class="hub-pulse delay-3" cx="122" cy="48" r="2" fill="#38bdf8" />
+          </g>
+
+          <g class="orbit-plane-group" filter="url(#glowFilter)">
+            <path d="M -16,0 L -4,-1.8 L -4,1.8 Z" fill="#34d399" fill-opacity="0.75">
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+            <path
+              d="M 9,0 L 3,-1.6 L -1,-8.5 L -3.5,-8.5 L -1.5,-1.6 L -6,-1.4 L -8.2,-4.5 L -9.8,-4.5 L -8.4,0 L -9.8,4.5 L -8.2,4.5 L -6,1.4 L -1.5,1.6 L -3.5,8.5 L -1,8.5 L 3,1.6 Z"
+              fill="#f8fafc"
+              stroke="#38bdf8"
+              stroke-width="0.5"
+            >
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto">
+                <mpath href="#mainGreatCirclePath" />
+              </animateMotion>
+            </path>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- 純白導覽條與 5 大區塊錨點分頁列 -->
+  <nav class="subnav" aria-label="系統架構章節導覽">
+    <div class="container subnav-inner">
+      <div class="subnav-links">
+        <a href="#sec-flow" class="subnav-link active">01 · 資料流與架構圖</a>
+        <a href="#sec-access" class="subnav-link">02 · 權限分級與配額</a>
+        <a href="#sec-ai" class="subnav-link">03 · AI 邊界與分層架構</a>
+        <a href="#sec-mesh" class="subnav-link">04 · 晧脈元素庫串聯</a>
+        <a href="#sec-legal" class="subnav-link">05 · 原出處免責與引用</a>
+      </div>
+      <span class="subnav-badge">MRV 查證透明規範文件</span>
+    </div>
+  </nav>
+
+  <main class="container main-content">
+    <!-- ==================== Block 01：互動式資料流與系統架構圖 ==================== -->
+    <section class="arch-card" id="sec-flow">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">BLOCK 01 · DATA FLOW &amp; DETERMINISTIC PIPELINE</span>
+          <h2>互動式資料流與系統架構圖</h2>
+        </div>
+        <span class="sec-pill">ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 6</span>
+      </div>
+
+      <!-- 水平動態資料流 SVG 軌道 -->
+      <div class="flow-track-wrap" aria-hidden="true">
+        <svg class="flow-track-svg" viewBox="0 0 960 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="flowLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0284c7" />
+              <stop offset="50%" stop-color="#0ea5e9" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+            <path id="flowPipePath" d="M 90,36 L 870,36" />
+          </defs>
+          <!-- 底軌 -->
+          <line x1="90" y1="36" x2="870" y2="36" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="6 6" />
+          <line x1="90" y1="36" x2="870" y2="36" stroke="url(#flowLineGrad)" stroke-width="2" stroke-opacity="0.45" />
+
+          <!-- 四個節點錨點 -->
+          <circle cx="120" cy="36" r="9" fill="#ffffff" stroke="#0284c7" stroke-width="3" />
+          <circle cx="360" cy="36" r="9" fill="#ffffff" stroke="#0284c7" stroke-width="3" />
+          <circle cx="600" cy="36" r="9" fill="#ffffff" stroke="#059669" stroke-width="3" />
+          <circle cx="840" cy="36" r="9" fill="#ffffff" stroke="#059669" stroke-width="3" />
+
+          <!-- 流動光點 -->
+          <circle class="flow-pulse-dot" r="5" fill="#0284c7">
+            <animateMotion dur="4.2s" repeatCount="indefinite">
+              <mpath href="#flowPipePath" />
+            </animateMotion>
+          </circle>
+          <circle class="flow-pulse-dot" r="4.5" fill="#059669">
+            <animateMotion dur="4.2s" begin="2.1s" repeatCount="indefinite">
+              <mpath href="#flowPipePath" />
+            </animateMotion>
+          </circle>
+        </svg>
+      </div>
+
+      <!-- 4 個可點擊節點卡片 -->
+      <div class="flow-nodes-grid" role="tablist" aria-label="架構節點">
+        <button type="button" class="flow-node active" data-node="input" role="tab" aria-selected="true">
+          <span class="node-code">01 · INPUT</span>
+          <strong>公開方法學與機場字典</strong>
+          <p>對應標準與全球座標字典（持續擴充）</p>
+        </button>
+        <button type="button" class="flow-node" data-node="sync" role="tab" aria-selected="false">
+          <span class="node-code">02 · SYNC &amp; R2</span>
+          <strong>排程檢核與原圖存證</strong>
+          <p>每 6 小時維護佇列，異常不覆寫快取</p>
+        </button>
+        <button type="button" class="flow-node" data-node="engine" role="tab" aria-selected="false">
+          <span class="node-code">03 · ENGINE</span>
+          <strong>零 AI 確定性計算引擎</strong>
+          <p>快取優先 ＋ 球面大圓零假值試算</p>
+        </button>
+        <button type="button" class="flow-node" data-node="mrv" role="tab" aria-selected="false">
+          <span class="node-code">04 · MRV ZIP</span>
+          <strong>憑證預覽與一鍵 ZIP 查證包</strong>
+          <p>明細報表 ＋ 原圖封存，瀏覽器零留存</p>
+        </button>
+      </div>
+
+      <!-- 即時切換之節點詳細檢視面板 -->
+      <div class="flow-detail-panel" id="flowDetailPanel" role="tabpanel">
+        <!-- 由 arch.js 動態渲染 -->
+      </div>
+    </section>
+
+    <!-- ==================== Block 02：存取權限分級與公平使用配額 ==================== -->
+    <section class="arch-card" id="sec-access">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">BLOCK 02 · ACCESS TIERS &amp; FAIR USE QUOTAS</span>
+          <h2>存取權限分級與公平使用配額</h2>
+        </div>
+        <span class="sec-pill sec-pill-emerald">現行狀態：L0 全面開放無償使用</span>
+      </div>
+
+      <p class="section-intro">
+        為兼顧公共盤查便利性與系統資源公平分配，本平台規劃三階段權限分級架構（現階段先維持 <strong>L0 全面開放</strong>，待後續帳號驗證系統上線後依序啟用配額控管）。
+      </p>
+
+      <div class="tier-grid">
+        <article class="tier-card tier-l0">
+          <div class="tier-badge">L0 · 現行預設</div>
+          <h3>無償免登入</h3>
+          <p class="tier-sub">適合日常單筆查閱、教學示範與快速試算</p>
+          <ul class="tier-list">
+            <li>單筆航線即時試算與一鍵範例載入<strong>無限次</strong></li>
+            <li>即時預覽起訖大圓航距、燃油推估與碳排放量</li>
+            <li>免註冊、免驗證，<strong>不蒐集任何個人資料</strong></li>
+          </ul>
+        </article>
+
+        <article class="tier-card tier-l1">
+          <div class="tier-badge">L1 · 規劃中</div>
+          <h3>試用後註冊</h3>
+          <p class="tier-sub">先算完、需批次清冊與匯出憑證包再登入</p>
+          <ul class="tier-list">
+            <li><strong>批次 CSV 試算</strong>：每次 10～15 筆、每月 1 次（前端格式檢核失敗不扣次）</li>
+            <li><strong>完整 ZIP 查證憑證包匯出</strong>：每月 10～20 份（每月 1 號自動重置）</li>
+            <li><strong>無雲端保留</strong>：瀏覽器端即時打包下載，關閉分頁即清空（零留存隱私保護）</li>
+          </ul>
+        </article>
+
+        <article class="tier-card tier-l1plus">
+          <div class="tier-badge">L1+ · 合作白名單</div>
+          <h3>合作白名單（人工核定）</h3>
+          <p class="tier-sub">支援大專院校永續課程、第三方查證與專案盤查</p>
+          <ul class="tier-list">
+            <li><strong>教學專案</strong>：L1 額度共 2 次，支援課堂示範模式與教學班級案例</li>
+            <li><strong>查證老師</strong>：L1 額度共 5 次（查證現場抽核與教學示範專用）</li>
+            <li><strong>大型盤查</strong>：專案辦理（大量組織清冊請另行申請開通專案額度）</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== Block 03：AI 使用邊界與系統分層架構 ==================== -->
+    <section class="arch-card" id="sec-ai">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">BLOCK 03 · AI BOUNDARY &amp; LAYERED ARCHITECTURE</span>
+          <h2>AI 使用邊界與系統分層架構</h2>
+        </div>
+        <span class="sec-pill">Human-in-the-Loop · 0% Runtime AI</span>
+      </div>
+
+      <div class="split-grid">
+        <!-- 左側卡片：AI 使用邊界聲明 -->
+        <div class="sub-card">
+          <h3>AI 使用邊界聲明 · Human-in-the-Loop</h3>
+          <div class="boundary-item">
+            <div class="boundary-tag tag-runtime">計算執行期（Runtime）</div>
+            <p>
+              <strong>0% 生成式 AI</strong>：所有航距測算、單位排放係數查閱與總碳排加總，均採確定性數學公式與結構化快取精準比對，全程<strong>零 AI Token 消耗</strong>，確保同一輸入條件在任何時間皆具備 100% 可重現性。
+            </p>
+          </div>
+          <div class="boundary-item">
+            <div class="boundary-tag tag-build">系統開發期（Build-Time）</div>
+            <p>
+              由溫室氣體盤查顧問主導規格設計與查證邏輯，並輔以生成式 AI 工具協助程式碼撰寫與自動化測試；所有方法學邊界、欄位定義與合規聲明，均經過<strong>專業人工審核與逐項核對</strong>後方得上線。
+            </p>
+          </div>
+        </div>
+
+        <!-- 右側卡片：系統分層架構與安全設計 -->
+        <div class="sub-card">
+          <h3>系統分層架構與安全設計</h3>
+          <table class="layer-table">
+            <thead>
+              <tr>
+                <th>架構分層</th>
+                <th>核心職責與安全邊界</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>前端呈現與互動層</strong></td>
+                <td>全球靜態分發、免登入即時試算介面、CSV 格式檢核與瀏覽器端零留存憑證打包。</td>
+              </tr>
+              <tr>
+                <td><strong>確定性運算引擎層</strong></td>
+                <td>精準比對航線快取優先；未命中時自動以球面大圓公式計算（0% AI 推估、零假預設值）。</td>
+              </tr>
+              <tr>
+                <td><strong>快取與原圖存證層</strong></td>
+                <td>維護全球與亞太樞紐機場座標字典（持續擴充）、航線參數快取與查證原圖封存。</td>
+              </tr>
+              <tr>
+                <td><strong>定時排程檢核層</strong></td>
+                <td>每 6 小時自動執行佇列維護，遇異常回應時保留既有有效快取絕不覆寫。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== Block 04：晧脈元素庫生態系串聯地圖 ==================== -->
+    <section class="arch-card" id="sec-mesh">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">BLOCK 04 · HAO ELEMENT MATRIX ECOSYSTEM</span>
+          <h2>晧脈元素庫生態系串聯地圖</h2>
+        </div>
+        <div class="mesh-filters" role="group" aria-label="元素層級篩選">
+          <button type="button" class="filter-btn active" data-filter="all">全部元素</button>
+          <button type="button" class="filter-btn" data-filter="L0">純 L0 公共服務</button>
+          <button type="button" class="filter-btn" data-filter="L0+L1">L0 + L1 專業工具</button>
+        </div>
+      </div>
+
+      <p class="section-intro">
+        即時與「<a href="https://hao-element-matrix.pages.dev/" target="_blank" rel="noopener noreferrer">晧脈元素庫（Hao Element Matrix）</a>」主站同步各已點亮元素模組（自動高亮當前所在之 <strong>Ti · 22 全球航空GHG排放計算器</strong>）。
+      </p>
+
+      <div class="mesh-grid" id="meshGrid">
+        <!-- 由 arch.js 動態同步渲染 -->
+      </div>
+    </section>
+
+    <!-- ==================== Block 05：原出處免責、智財聲明與一鍵複製 MRV 引用文案 ==================== -->
+    <section class="arch-card" id="sec-legal">
+      <div class="section-header">
+        <div>
+          <span class="sec-kicker">BLOCK 05 · LEGAL DISCLAIMER &amp; MRV CITATION</span>
+          <h2>原出處免責、智財聲明與 MRV 引用文案</h2>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        <div class="sub-card">
+          <h3>非官方背書與原出處核對免責</h3>
+          <p class="legal-text">
+            本系統為「晧脈元素庫（Hao Element Matrix）」獨立開發之溫室氣體盤查輔助估算與資料彙整工具，與國際民航組織（ICAO）、中華民國環境部及國際標準化組織（ISO）均<strong>無官方從屬、授權或背書關係</strong>。
+          </p>
+          <p class="legal-text">
+            所有航空排放計算結果僅供盤查作業與教育研究參考；正式申報或第三方查證作業，請務必前往原出處核對最新公式與參數公告：
+            <br />
+            <a href="https://www.icao.int/environmental-protection/environmental-tools/icec" target="_blank" rel="noopener noreferrer" class="external-link">
+              🔗 ICAO Carbon Emissions Calculator (ICEC) 官方入口 ↗
+            </a>
+          </p>
+        </div>
+
+        <div class="sub-card">
+          <h3>智慧財產權與禁止濫用聲明</h3>
+          <p class="legal-text">
+            © 2026 晧脈元素庫（Hao Element Matrix）保留所有權利。本平台之介面設計、確定性試算流程、系統架構與整合報表格式受著作權保護。
+          </p>
+          <p class="legal-text">
+            <strong>禁止濫用規範</strong>：嚴禁對本服務進行自動化高頻爬蟲、惡意大量消耗頻寬、偽冒官方憑證或未經授權之商業轉售。經查證屬實者，系統將自動封鎖連線權限。
+          </p>
+        </div>
+      </div>
+
+      <div class="citation-box">
+        <div class="citation-header">
+          <strong>📋 查證報告書參考引用文案（適用 ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 6）</strong>
+          <button type="button" class="btn-copy-citation" id="btnCopyCitation">
+            📄 一鍵複製引用聲明
+          </button>
+        </div>
+        <pre class="citation-preview" id="citationText">本組織航空貨運（GHG Protocol 範疇三類別 4）與商務差旅（類別 6 / ISO 14064-1 類別 3）之溫室氣體排放量，係透過「晧脈元素庫 — 全球航空GHG排放計算器（Ti · 22）」輔助彙整計算。各航線優先比對 ICAO Carbon Emissions Calculator (ICEC) 官方計算結果與原始頁面截圖存證（標記為 ICAO_OFFICIAL）；尚未收錄之航線則依機場真實經緯度採 Haversine 球面大圓距離公式進行確定性推算（標記為 GCD_FALLBACK），全程零生成式 AI 數值推估，所有參數與方法學均以 ICAO 原出處最新公告為準。</pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- 非阻斷式 Toast 提示 -->
+  <div class="toast" id="toastNotice" role="status" aria-live="polite" hidden></div>
+
+  <!-- 頁尾 -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <strong>全球航空GHG排放計算器 · 系統架構</strong>
+        <span>· Ti · 22 鈦 (Titanium)</span>
+      </div>
+      <div class="footer-nav">
+        <a href="../" class="footer-link">← 返回計算器主頁</a>
+        <hao-element-badge symbol="Ti" theme="light"></hao-element-badge>
+      </div>
+      <div class="footer-disclaimer">
+        © 2026 晧脈元素庫（Hao Element Matrix）保留所有權利。本工具為獨立開發之盤查輔助估算平台，與 ICAO、環境部及 ISO 無官方背書關係；所有數據與方法學一律以原出處機關最新公告為準。
+      </div>
+    </div>
+  </footer>
+
+  <script src="./arch.js"></script>
+</body>
+</html>

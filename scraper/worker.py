@@ -111,20 +111,27 @@ async def scrape_passenger_route(page, origin_iata: str, dest_iata: str, local_i
     """
     透過 ICAO 官方計算機 (Passenger 模式) 抓取單程 (One Way) 客運距離、油耗、碳排與完整 Flight Stage Detail 截圖
     """
-    await page.goto("https://icec.icao.int/calculator", timeout=60000, wait_until="domcontentloaded")
+    await page.goto("https://icec.icao.int/calculator", timeout=60000, wait_until="load")
     await page.locator("#passengerButton").wait_for(state="visible", timeout=30000)
 
     await page.locator("#passengerButton").click()
-    await page.wait_for_timeout(500)
+    # 等待 defer 載入之 site.js 與 Select2 初始化完成
+    for _ in range(20):
+        ready = await page.evaluate("() => typeof $ !== 'undefined' && $('#SelectPassengerDeparture').hasClass('select2-hidden-accessible')")
+        if ready:
+            break
+        await page.wait_for_timeout(300)
 
     dep_ok = await page.evaluate(
         """(orig) => {
             const $dep = $('#SelectPassengerDeparture');
             const $opt = $dep.find(`option[value="${orig}"]`);
             if ($opt.length === 0) return false;
-            const isSaf = $opt.data('saf');
             $dep.val(orig).trigger('change');
-            PassengerGetAirportsByDeparture(orig, isSaf, 'Departure');
+            $dep.trigger({
+                type: 'select2:select',
+                params: { data: { id: orig, text: $opt.text(), element: $opt[0] } }
+            });
             return true;
         }""",
         origin_iata,
@@ -281,7 +288,14 @@ async def process_queue():
                 conn.rollback()
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE scrape_queue SET retry_count = retry_count + 1, error_log = %s, updated_at = NOW() WHERE id = %s;",
+                        """
+                        UPDATE scrape_queue
+                        SET retry_count = retry_count + 1,
+                            status = CASE WHEN retry_count + 1 >= 3 THEN 'FAILED' ELSE 'PENDING' END,
+                            error_log = %s,
+                            updated_at = NOW()
+                        WHERE id = %s;
+                        """,
                         (str(e)[:500], qid),
                     )
                 conn.commit()
